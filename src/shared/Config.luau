@@ -3,6 +3,9 @@
 -- exponential curve from $25 to $2,000,000; income = price / 40 (min 1).
 -- Nothing here is copied from any earlier version: names, numbers and
 -- structure were written fresh for this rebuild.
+-- Price curve: critter i costs 25 * 1.271^(i-1); mutations multiply
+-- income (Neon 2x, Shadow 3x, Golden 5x, Rainbow 10x); rebirth adds
+-- +25% income per rebirth (max 10) after $1M earned since the last one.
 
 local Config = {}
 
