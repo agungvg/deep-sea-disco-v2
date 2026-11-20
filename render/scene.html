@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 1024px; height: 576px; overflow: hidden; font-family: "Arial Black", Arial, sans-serif; background: #07223a; }
+  .scene { position: absolute; inset: 0; display: none; }
+  .scene.on { display: block; }
+  .bg { position: absolute; inset: 0; background: linear-gradient(180deg, #04182e 0%, #07223a 45%, #0a5c6e 100%); }
+  .rays { position: absolute; left: 50%; top: 40px; width: 900px; height: 500px; transform: translateX(-50%); opacity: 0.35; }
+  .ball { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); filter: drop-shadow(0 0 26px rgba(140,220,255,.9)); }
+  .floor { position: absolute; left: 50%; bottom: 0; width: 1100px; height: 210px; transform: translateX(-50%); perspective: 420px; }
+  .tiles { width: 100%; height: 100%; transform: rotateX(58deg); transform-origin: bottom; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(4, 1fr); gap: 4px; }
+  .tiles div { border-radius: 3px; }
+  .title { position: absolute; left: 0; right: 0; top: 126px; text-align: center; color: #fff; font-size: 78px; letter-spacing: 2px; line-height: 0.95; text-shadow: 0 4px 0 #ff6b6b, 0 8px 24px rgba(0,0,0,.6); }
+  .subtitle { position: absolute; left: 0; right: 0; top: 282px; text-align: center; color: #ffd68c; font-size: 26px; letter-spacing: 6px; text-shadow: 0 2px 8px rgba(0,0,0,.7); }
+  .pill { position: absolute; background: rgba(7,34,58,.85); border: 2px solid rgba(255,255,255,.25); border-radius: 12px; color: #ffd68c; font-size: 24px; padding: 8px 16px; }
+  .money { top: 14px; left: 14px; }
+  .money small { color: #aaff6e; font-size: 18px; display: block; }
+  .mult { top: 14px; left: 268px; color: #fff; background: rgba(255,107,107,.9); border: none; }
+  .btns { position: absolute; top: 14px; right: 14px; display: flex; gap: 8px; }
+  .btns span { background: rgba(20,80,100,.9); border: 2px solid rgba(255,255,255,.25); border-radius: 8px; color: #f0f8ff; font-size: 15px; padding: 8px 12px; }
+  .banner { position: absolute; left: 50%; top: 66px; transform: translateX(-50%); background: #ff6b6b; color: #fff; border-radius: 10px; padding: 10px 26px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+  .banner .t { font-size: 30px; }
+  .banner .s { font-size: 16px; font-family: Arial, sans-serif; font-weight: bold; }
+  .banner.lime { background: #4f9e2e; }
+  .banner.purple { background: #6e3fb0; }
+  .critter { position: absolute; text-align: center; }
+  .critter svg { display: block; margin: 0 auto; filter: drop-shadow(0 8px 10px rgba(0,0,0,.45)); }
+  .plate { display: inline-block; margin-top: 2px; background: rgba(7,34,58,.9); border-radius: 8px; padding: 4px 10px; color: #fff; font-size: 15px; }
+  .plate b { color: #ffd68c; }
+  .plate .inc { color: #aaff6e; }
+  .floatlabel { position: absolute; color: #aaff6e; font-size: 22px; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+  .caption { position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; color: #eaf6ff; font-size: 19px; letter-spacing: 3px; text-shadow: 0 2px 8px rgba(0,0,0,.8); }
+  .prompt { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); background: rgba(7,34,58,.85); border-radius: 8px; color: #fff; font-size: 17px; padding: 8px 18px; }
+  .pedestal { position: absolute; width: 150px; height: 26px; background: #eaf6ff; border-radius: 6px; box-shadow: 0 0 18px rgba(140,220,255,.8); }
+  .sellpad { position: absolute; background: #ffcd3c; color: #3c2800; border-radius: 10px; font-size: 20px; padding: 10px 18px; text-align: center; }
+  .lockbtn { position: absolute; right: 16px; bottom: 16px; background: #9656ff; color: #fff; border-radius: 10px; font-size: 18px; padding: 12px 18px; }
+  .conveyor { position: absolute; left: 62px; right: 62px; top: 250px; height: 74px; background: #143c5a; border-radius: 10px; border: 3px solid #1caaBE; }
+  .conveyor .stripe { position: absolute; top: 32px; width: 60px; height: 10px; background: #1caaBE; border-radius: 5px; opacity: .8; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="jelly" viewBox="0 0 120 120">
+      <path d="M20 78 Q20 30 60 30 Q100 30 100 78 L100 82 L20 82 Z" fill="#ff78c8"/>
+      <path d="M32 82 q4 18 0 26 M48 82 q4 18 0 26 M64 82 q4 18 0 26 M80 82 q4 18 0 26" stroke="#ff9fd8" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <circle cx="46" cy="58" r="8" fill="#fff"/><circle cx="74" cy="58" r="8" fill="#fff"/>
+      <circle cx="48" cy="60" r="4" fill="#14141e"/><circle cx="76" cy="60" r="4" fill="#14141e"/>
+    </symbol>
+    <symbol id="shrimp" viewBox="0 0 120 120">
+      <path d="M28 84 Q22 44 58 34 Q96 26 98 56 Q99 78 76 84 Q52 90 28 84 Z" fill="#ff8c6e"/>
+      <path d="M90 52 l18 -8 l-4 16 l-14 2 Z" fill="#ffd68c"/>
+      <circle cx="80" cy="46" r="7" fill="#fff"/><circle cx="82" cy="48" r="3.5" fill="#14141e"/>
+      <path d="M60 34 q10 -14 22 -12" stroke="#ff8c6e" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="eel" viewBox="0 0 120 120">
+      <path d="M22 92 Q10 60 34 48 Q58 36 62 62 Q66 88 88 74 Q104 62 96 44" stroke="#ffe650" stroke-width="20" fill="none" stroke-linecap="round"/>
+      <circle cx="94" cy="38" r="12" fill="#ffe650"/>
+      <circle cx="90" cy="34" r="4" fill="#fff"/><circle cx="100" cy="34" r="4" fill="#fff"/>
+      <circle cx="91" cy="35" r="2" fill="#14141e"/><circle cx="101" cy="35" r="2" fill="#14141e"/>
+      <rect x="78" y="18" width="30" height="8" rx="4" fill="#5aaaff"/>
+      <circle cx="78" cy="30" r="7" fill="#5aaaff"/><circle cx="108" cy="30" r="7" fill="#5aaaff"/>
+    </symbol>
+    <symbol id="fish" viewBox="0 0 120 120">
+      <path d="M28 62 L8 40 L16 62 L8 84 Z" fill="#ffd68c"/>
+      <ellipse cx="64" cy="62" rx="38" ry="26" fill="#5ab4e6"/>
+      <path d="M60 38 q10 -12 20 -8 l-6 10 Z" fill="#ffd68c"/>
+      <circle cx="88" cy="56" r="8" fill="#fff"/><circle cx="90" cy="58" r="4" fill="#14141e"/>
+    </symbol>
+    <symbol id="krill" viewBox="0 0 120 120">
+      <path d="M30 86 Q24 48 58 38 Q94 30 96 58 Q97 80 74 86 Q50 92 30 86 Z" fill="#ffb43c"/>
+      <path d="M44 36 l6 -16 l6 12 l8 -12 l6 14 l8 -10 l4 14" fill="#ffcd3c" stroke="#ffcd3c" stroke-width="4" stroke-linejoin="round"/>
+      <circle cx="76" cy="52" r="7" fill="#fff"/><circle cx="78" cy="54" r="3.5" fill="#14141e"/>
+    </symbol>
+    <symbol id="dj" viewBox="0 0 120 120">
+      <path d="M22 80 Q22 32 60 32 Q98 32 98 80 L98 84 L22 84 Z" fill="#3c2878"/>
+      <circle cx="60" cy="18" r="14" fill="#dce6ff"/>
+      <circle cx="52" cy="14" r="3" fill="#8fd4ff"/><circle cx="64" cy="20" r="3" fill="#ffd68c"/><circle cx="58" cy="8" r="3" fill="#ff78c8"/>
+      <circle cx="46" cy="60" r="8" fill="#fff"/><circle cx="74" cy="60" r="8" fill="#fff"/>
+      <circle cx="48" cy="62" r="4" fill="#14141e"/><circle cx="76" cy="62" r="4" fill="#14141e"/>
+      <rect x="30" y="46" width="60" height="7" rx="3.5" fill="#ffd68c"/>
+      <circle cx="30" cy="56" r="8" fill="#ffd68c"/><circle cx="90" cy="56" r="8" fill="#ffd68c"/>
+    </symbol>
+    <symbol id="narwhal" viewBox="0 0 120 120">
+      <path d="M96 44 L112 16 L104 48 Z" fill="#ffd68c"/>
+      <ellipse cx="60" cy="64" rx="40" ry="24" fill="#78f0ff"/>
+      <path d="M28 64 L8 44 L16 64 L8 84 Z" fill="#ff78c8"/>
+      <circle cx="86" cy="58" r="8" fill="#fff"/><circle cx="88" cy="60" r="4" fill="#14141e"/>
+    </symbol>
+    <symbol id="manta" viewBox="0 0 120 120">
+      <path d="M10 62 Q40 30 60 52 Q80 30 110 62 Q80 78 60 70 Q40 78 10 62 Z" fill="#5a50b4"/>
+      <path d="M60 70 q-4 22 0 30 q4 -8 0 -30" fill="#5a50b4"/>
+      <circle cx="50" cy="56" r="6" fill="#fff"/><circle cx="70" cy="56" r="6" fill="#fff"/>
+      <circle cx="51" cy="57" r="3" fill="#14141e"/><circle cx="71" cy="57" r="3" fill="#14141e"/>
+      <path d="M52 78 l8 -6 l8 6 l-8 8 Z" fill="#ff6b6b"/>
+    </symbol>
+    <symbol id="crab" viewBox="0 0 120 120">
+      <ellipse cx="60" cy="70" rx="38" ry="24" fill="#ff5a50"/>
+      <circle cx="20" cy="58" r="13" fill="#ffcd3c"/><circle cx="100" cy="58" r="13" fill="#ffcd3c"/>
+      <circle cx="46" cy="42" r="9" fill="#fff"/><circle cx="74" cy="42" r="9" fill="#fff"/>
+      <circle cx="48" cy="44" r="4.5" fill="#14141e"/><circle cx="76" cy="44" r="4.5" fill="#14141e"/>
+      <path d="M28 84 l-10 12 M48 88 l-4 14 M72 88 l4 14 M92 84 l10 12" stroke="#ff5a50" stroke-width="6" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="shark" viewBox="0 0 120 120">
+      <path d="M56 26 L70 4 L76 28 Z" fill="#5a6e8c"/>
+      <ellipse cx="60" cy="64" rx="42" ry="24" fill="#788ca8"/>
+      <path d="M24 64 L4 44 L12 64 L4 84 Z" fill="#788ca8"/>
+      <circle cx="90" cy="58" r="8" fill="#fff"/><circle cx="92" cy="60" r="4" fill="#14141e"/>
+      <path d="M82 78 l6 6 l6 -6 l6 6 l6 -6" stroke="#fff" stroke-width="3" fill="none"/>
+    </symbol>
+    <symbol id="puffer" viewBox="0 0 120 120">
+      <circle cx="60" cy="62" r="36" fill="#ffc85a"/>
+      <path d="M60 18 l6 12 M60 18 l-6 12 M24 30 l12 8 M96 30 l-12 8 M16 62 l14 2 M104 62 l-14 2 M28 96 l10 -10 M92 96 l-10 -10" stroke="#ff8c6e" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="48" cy="56" r="8" fill="#fff"/><circle cx="72" cy="56" r="8" fill="#fff"/>
+      <circle cx="50" cy="58" r="4" fill="#14141e"/><circle cx="74" cy="58" r="4" fill="#14141e"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============ COVER ============ -->
+<div class="scene" id="cover">
+  <div class="bg"></div>
+  <svg class="rays" viewBox="0 0 900 500"><g fill="#8fd4ff" opacity="0.55">
+    <polygon points="450,0 380,500 300,500"/><polygon points="450,0 430,500 400,500"/>
+    <polygon points="450,0 520,500 600,500"/><polygon points="450,0 470,500 500,500"/>
+  </g></svg>
+  <svg class="ball" width="120" height="120" viewBox="0 0 150 150" style="top:6px">
+    <defs><radialGradient id="ballg" cx="35%" cy="30%"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#9db8d8"/></radialGradient></defs>
+    <circle cx="75" cy="75" r="70" fill="url(#ballg)"/>
+    <g fill="#7fa8cc" opacity="0.7">
+      <rect x="45" y="25" width="20" height="20"/><rect x="85" y="25" width="20" height="20"/>
+      <rect x="25" y="55" width="20" height="20"/><rect x="65" y="55" width="20" height="20"/><rect x="105" y="55" width="20" height="20"/>
+      <rect x="45" y="85" width="20" height="20"/><rect x="85" y="85" width="20" height="20"/>
+      <rect x="65" y="115" width="20" height="20"/>
+    </g>
+  </svg>
+  <div class="floor"><div class="tiles">
+    <div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#1caaBE"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div>
+    <div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div><div style="background:#1caaBE"></div><div style="background:#ff78c8"></div>
+    <div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div>
+    <div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div>
+  </div></div>
+  <div class="pill money">$12,480<small>+$1,240/s</small></div>
+  <div class="pill mult">x1 MONEY</div>
+  <div class="title">DEEP SEA<br>DISCO</div>
+  <div class="subtitle">48 CRITTERS &nbsp;•&nbsp; STEAL &nbsp;•&nbsp; MUTATIONS &nbsp;•&nbsp; REBIRTH</div>
+  <div class="critter" style="left:150px; bottom:100px; width:170px;"><svg width="130" height="130"><use href="#jelly"/></svg><div class="plate"><b>Jelly Jam</b> <span class="inc">$48/s</span></div></div>
+  <div class="critter" style="left:427px; bottom:100px; width:170px;"><svg width="150" height="150"><use href="#eel"/></svg><div class="plate"><b>Electric Eelvis</b> <span class="inc">$312/s</span></div></div>
+  <div class="critter" style="left:700px; bottom:100px; width:170px;"><svg width="130" height="130"><use href="#shrimp"/></svg><div class="plate"><b>Disco Shrimp</b> <span class="inc">$96/s</span></div></div>
+  <div class="caption">COLLECT &nbsp;•&nbsp; DEPOSIT &nbsp;•&nbsp; DANCE &nbsp;•&nbsp; GET RICH</div>
+</div>
+
+<!-- ============ GAMEPLAY ============ -->
+<div class="scene" id="gameplay">
+  <div class="bg"></div>
+  <svg class="ball" width="110" height="110" viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="#c8dcee"/><g fill="#7fa8cc" opacity="0.7"><rect x="45" y="25" width="20" height="20"/><rect x="85" y="25" width="20" height="20"/><rect x="25" y="55" width="20" height="20"/><rect x="65" y="55" width="20" height="20"/><rect x="105" y="55" width="20" height="20"/><rect x="45" y="85" width="20" height="20"/><rect x="85" y="85" width="20" height="20"/></g></svg>
+  <div class="floor"><div class="tiles">
+    <div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#1caaBE"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div>
+    <div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div><div style="background:#1caaBE"></div><div style="background:#ff78c8"></div>
+    <div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div>
+    <div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div>
+  </div></div>
+  <div class="pill money">$12,480<small>+$1,240/s</small></div>
+  <div class="btns"><span>UPGRADES</span><span>INDEX 12/48</span><span>QUESTS</span><span>REBIRTH</span></div>
+  <div class="banner"><div class="t">DISCO FEVER!</div><div class="s">2x money for 45 seconds</div></div>
+  <div class="conveyor">
+    <div class="stripe" style="left:20px"></div><div class="stripe" style="left:180px"></div><div class="stripe" style="left:340px"></div><div class="stripe" style="left:500px"></div><div class="stripe" style="left:660px"></div><div class="stripe" style="left:820px"></div>
+  </div>
+  <div class="critter" style="left:120px; top:218px; width:90px;"><svg width="80" height="80"><use href="#fish"/></svg><div class="plate"><b>Bubbles McFin</b> <span class="inc">$1/s</span></div></div>
+  <div class="critter" style="left:330px; top:210px; width:90px;"><svg width="84" height="84"><use href="#puffer"/></svg><div class="plate"><b>Pulsar Puffer</b> <span class="inc">$8,210/s</span></div></div>
+  <div class="critter" style="left:560px; top:214px; width:90px;"><svg width="82" height="82"><use href="#narwhal"/></svg><div class="plate"><b>Neon Narwhal</b> <span class="inc">$640/s</span></div></div>
+  <div class="critter" style="left:790px; top:216px; width:90px;"><svg width="80" height="80"><use href="#krill"/></svg><div class="plate"><b>King Krill</b> <span class="inc">$1,180/s</span></div></div>
+  <div class="floatlabel" style="left:170px; top:180px;">+$1,240/s</div>
+  <div class="floatlabel" style="left:610px; top:172px;">+$640/s</div>
+  <div class="prompt">[E] &nbsp;DEPOSIT critter on a pedestal</div>
+</div>
+
+<!-- ============ BASE ============ -->
+<div class="scene" id="base">
+  <div class="bg"></div>
+  <svg class="ball" width="110" height="110" viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="#c8dcee"/><g fill="#7fa8cc" opacity="0.7"><rect x="45" y="25" width="20" height="20"/><rect x="85" y="25" width="20" height="20"/><rect x="25" y="55" width="20" height="20"/><rect x="65" y="55" width="20" height="20"/><rect x="105" y="55" width="20" height="20"/><rect x="45" y="85" width="20" height="20"/><rect x="85" y="85" width="20" height="20"/></g></svg>
+  <div class="floor"><div class="tiles">
+    <div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#1caaBE"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div>
+    <div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div><div style="background:#1caaBE"></div><div style="background:#ff78c8"></div>
+    <div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div>
+    <div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div>
+  </div></div>
+  <div class="pill money">$48,920<small>+$2,480/s</small></div>
+  <div class="btns"><span>UPGRADES</span><span>INDEX 12/48</span><span>QUESTS</span><span>REBIRTH</span></div>
+  <div class="pedestal" style="left:130px; bottom:190px;"></div>
+  <div class="pedestal" style="left:330px; bottom:190px;"></div>
+  <div class="pedestal" style="left:530px; bottom:190px;"></div>
+  <div class="pedestal" style="left:730px; bottom:190px;"></div>
+  <div class="critter" style="left:140px; bottom:212px; width:130px;"><svg width="110" height="110"><use href="#dj"/></svg><div class="plate"><b>The Abyssal DJ</b> <span class="inc">$2,940/s</span></div></div>
+  <div class="critter" style="left:340px; bottom:212px; width:130px;"><svg width="110" height="110"><use href="#manta"/></svg><div class="plate"><b>Madame Manta</b> <span class="inc">$1,560/s</span></div></div>
+  <div class="critter" style="left:540px; bottom:212px; width:130px;"><svg width="110" height="110"><use href="#eel"/></svg><div class="plate"><b>Electric Eelvis</b> <span class="inc">$312/s</span></div></div>
+  <div class="critter" style="left:740px; bottom:212px; width:130px;"><svg width="110" height="110"><use href="#jelly"/></svg><div class="plate"><b>Jelly Jam</b> <span class="inc">$48/s</span></div></div>
+  <div class="floatlabel" style="left:180px; top:280px;">+$2,940/s</div>
+  <div class="floatlabel" style="left:580px; top:290px;">+$312/s</div>
+  <div class="sellpad" style="left:430px; bottom:60px;">SELL 80%</div>
+  <div class="lockbtn">LOCK BASE</div>
+</div>
+
+<!-- ============ EVENT ============ -->
+<div class="scene" id="event">
+  <div class="bg"></div>
+  <svg class="ball" width="110" height="110" viewBox="0 0 150 150"><circle cx="75" cy="75" r="70" fill="#c8dcee"/><g fill="#7fa8cc" opacity="0.7"><rect x="45" y="25" width="20" height="20"/><rect x="85" y="25" width="20" height="20"/><rect x="25" y="55" width="20" height="20"/><rect x="65" y="55" width="20" height="20"/><rect x="105" y="55" width="20" height="20"/><rect x="45" y="85" width="20" height="20"/><rect x="85" y="85" width="20" height="20"/></g></svg>
+  <div class="floor"><div class="tiles">
+    <div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#1caaBE"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div>
+    <div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#ffcd3c"></div><div style="background:#aaff6e"></div><div style="background:#1caaBE"></div><div style="background:#ff78c8"></div>
+    <div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div>
+    <div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div><div style="background:#aaff6e"></div><div style="background:#ff78c8"></div><div style="background:#ffcd3c"></div><div style="background:#9656ff"></div><div style="background:#ff6b6b"></div><div style="background:#1caaBE"></div>
+  </div></div>
+  <div class="pill money">$12,480<small>+$1,240/s</small></div>
+  <div class="btns"><span>UPGRADES</span><span>INDEX 12/48</span><span>QUESTS</span><span>REBIRTH</span></div>
+  <div class="banner"><div class="t">NET NABBER!</div><div class="s">A thief crab stole a critter — TAG it to make it drop!</div></div>
+  <div class="critter" style="left:400px; bottom:230px; width:220px;"><svg width="200" height="200"><use href="#crab"/></svg></div>
+  <div class="critter" style="left:455px; bottom:330px; width:110px;"><svg width="90" height="90"><use href="#fish"/></svg><div class="plate"><b>Bubbles McFin</b> <span class="inc">$1/s</span></div></div>
+  <div class="critter" style="left:120px; bottom:210px; width:130px;"><svg width="110" height="110"><use href="#shark"/></svg></div>
+  <div class="floatlabel" style="left:640px; top:250px;">TAG THE CRAB!</div>
+  <div class="prompt">Touch the crab to save the critter!</div>
+</div>
+
+<script>
+  const q = new URLSearchParams(location.search).get('s') || 'cover';
+  const el = document.getElementById(q);
+  if (el) el.classList.add('on');
+</script>
+</body>
+</html>
